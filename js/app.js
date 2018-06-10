@@ -19,7 +19,7 @@ function get_response(results_arr) {
           "title":item.snippet.title, 
           "videoid":item.id.videoId,
           "description":item.snippet.description,
-          "author":item.snippet.channelTitle
+          "author":item.snippet.channelTitle,
       }]);
     });
   });
@@ -37,8 +37,10 @@ function ajax(url, callback){
   xmlhttp.send();
 }
 
-var results_arr, n = 0, slice_size = 6;
-var form = document.querySelector('form')
+var results_arr, prev_page,
+    n = 0, slice_size = 7,
+    last_position = {};
+var form = document.querySelector('form');
 var container = document.querySelector(".container");
 
 var request_func = function(e) {
@@ -59,10 +61,10 @@ var request_func = function(e) {
   });
 }
 
-var handler = function() {
+var scroller_func = function() {
   var lastDiv = document.querySelectorAll(".item");
   var lastLeft = lastDiv[lastDiv.length - 1].getBoundingClientRect().left;
-  var containerWidth = document.querySelector(".container").getBoundingClientRect().width;
+  var containerWidth = container.getBoundingClientRect().width;
 
   if(lastLeft < containerWidth) {
     loading = true;
@@ -70,5 +72,29 @@ var handler = function() {
   }
 };
 
-container.addEventListener("scroll", handler);
+var swipe = function() {
+  var deltaX = last_position.x - event.clientX,
+      deltaY = last_position.y - event.clientY;
+  if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 0) {
+    document.getElementById("results").scrollLeft += 600;
+  } else if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX < 0) {
+    document.getElementById("results").scrollLeft -= 600;
+  }
+}
+
+var remove_mousemove = function() {
+  container.removeEventListener("mousemove", swipe);
+}
+
+container.addEventListener("mousedown", function() {
+  last_position = {
+    x : event.clientX,
+    y : event.clientY
+  };
+  container.addEventListener("mousemove", swipe);
+})
+container.addEventListener("mouseup", remove_mousemove)
+container.addEventListener("mouseout", remove_mousemove)
+
+container.addEventListener("scroll", scroller_func);
 form.addEventListener("submit", request_func)
